@@ -37,6 +37,7 @@ def db_runquery(cur,query):
     logging.debug("DB Query executed and returned".format())
     return result
 
+# If the output is truncated (has ... instead of data), the following function can be used to print with wider columns and other
 def print_full(x):
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_columns', None)
@@ -107,7 +108,7 @@ def main():
         print("\n9. For O'Douls, what are the mean and standard deviation for the O'Doul's overall scores?")
         mean_deviation = odouls.mean()
         std_deviation = odouls.std()
-        print("Mean Deviation: " + str(mean_deviation) + ", Standard Deviation: " + str(std_deviation))
+        print("[A] Mean Deviation: " + str(mean_deviation) + ", Standard Deviation: " + str(std_deviation))
 
         #Question 10:Draw a boxplot of the low_abv data (may need to close window to continue)
         print("\n10. Draw a boxplot of the low_abv data")
