@@ -3,20 +3,17 @@
 ### Assignment 7 - Data Analysis and Databases
 ### Author: Jose Pereda
 ### SDCE Student ID: 5696529
-### Submission date: June 01, 2021
+### Submission date: June 02, 2021
 ### --------------------------------------------------------------------------------------
 
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import sqlite3
 import os
 import logging
 
-from numpy.core.einsumfunc import _compute_size_by_dict
-
 def debug_config():
-    logging.basicConfig(level=logging.INFO, format = "%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s")
+    logging.basicConfig(level=logging.INFO, format = "\n%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s")
 
 def db_checkfile(dbfile):
     if os.path.exists(dbfile) and os.path.getsize(dbfile) > 0:
@@ -40,40 +37,82 @@ def db_runquery(cur,query):
     logging.debug("DB Query executed and returned".format())
     return result
 
+def print_full(x):
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', 2000)
+    pd.set_option('display.float_format', '{:20,.2f}'.format)
+    pd.set_option('display.max_colwidth', None)
+    print(x)
+    pd.reset_option('display.max_rows')
+    pd.reset_option('display.max_columns')
+    pd.reset_option('display.width')
+    pd.reset_option('display.float_format')
+    pd.reset_option('display.max_colwidth')
+
 def main():
      # Declare database file name 
-    dbfile = 'degrees2.db'
+    dbfile = 'beers.db'
     # Declare program name
-    programname = "Bachelors Degrees for US Women by Major"
+    programname = "Data Analysis and Databases"
     debug_config()
 
     print(programname)
     db_checkfile(dbfile)
     try:
+        # Setup connection to db
         con = db_connect(dbfile)
         cur = con.cursor()
 
-        # Declare array variables for each degree type
-        allyears = []
-        architecture = []
-        computerscience = []
-        engineering = []
-        foreignlanguage = []
+        # Read the SQLite query results into a pandas data frame 
+        df = pd.read_sql_query("SELECT * from reviews", con)
 
-        # query degreees.db for the degrees data of interest
-        query = 'SELECT Year, Architecture, ComputerScience, Engineering, ForeignLanguages from degrees'
-        res = db_runquery(cur, query)
-        
-        # Put queary results into array variables
-        for result in res:
-            allyears.append(result[0])
-            architecture.append(result[1])
-            computerscience.append(result[2])
-            engineering.append(result[3])
-            foreignlanguage.append(result[4])
+        # Question 1: How many rows are in the table?
+        print("1. How many rows are in the table?")
+        print("[A] " + str(len(df))+ "\n")
 
-        # Plot the results
-        #print_higher_ed_degrees(allyears, architecture, computerscience, engineering, foreignlanguage)
+        # Question 2: Describe the table
+        print("2. Describe the table:")
+        print(df.describe())
+
+        # Question 3: How many entries are there for each brewery
+        print("\n3: How many entries are there for each brewery?")
+        print(df.groupby(['brewery_name']).size())
+
+        # Question 4: Find all entries are low alcohol.  Alcohol by volume (ABV) less than 1%
+        print("\n4: Find all entries are low alcohol. Alcohol by volume (ABV) less than 1%")
+        low_abv = df[df.beer_abv < 1]
+        print_full(low_abv)
+
+        # Question 5:How many reviews are there for low ABV beers?
+        print("\n5. How many reviews are there for low ABV beers?")
+        print("[A] " + str(len(low_abv)))
+
+        # Question 6:Group  the AVB beers by beer and count
+        print("\n6. Group the AVB beers by beer and count:")
+        grouping = low_abv.groupby('beer_name')
+        print(grouping.size())
+
+        # Question 7:How consistent are the O'Douls overall scores?
+        print("\n7. How consistent are the O'Douls overall scores?")
+        odouls = low_abv[low_abv.beer_name == "O'Doul's"]['review_overall']
+        print(odouls)
+
+        # Question 8:Plot a histogram of O'Douls overall scores (may need to close window to continue)
+        print("\n8. Plot a histogram of O'Douls overall scores:")
+        odouls.hist()
+        plt.show()
+
+        #Question 9:For O'Douls, what are the mean and standard deviation for the O'Doul's overall scores?
+        print("\n9. For O'Douls, what are the mean and standard deviation for the O'Doul's overall scores?")
+        mean_deviation = odouls.mean()
+        std_deviation = odouls.std()
+        print("Mean Deviation: " + str(mean_deviation) + ", Standard Deviation: " + str(std_deviation))
+
+        #Question 10:Draw a boxplot of the low_abv data (may need to close window to continue)
+        print("\n10. Draw a boxplot of the low_abv data")
+        low_abv.boxplot(figsize=(12,10))
+        plt.show()
 
     except sqlite3.Error as error:
         logging.error("Error executing query", error)
@@ -81,7 +120,7 @@ def main():
         if con:
             con.close()
             logging.debug("[info] db Closed".format())
-    print('Done - check completed')
+    print('\nDone - check completed')
     logging.info("Completed")
 
 if __name__ == "__main__":
